@@ -1,0 +1,12 @@
+pandas
+numpy
+jupyter
+ipykernel
+duckdb
+scikit-learn
+matplotlib
+seaborn
+transformers
+torch
+bertopic
+sentence-transformers
