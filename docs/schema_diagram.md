@@ -55,7 +55,7 @@ erDiagram
         DOUBLE sentiment_score
         INTEGER topic_id
         VARCHAR topic_label
-        DOUBLE escalation_risk_score
+        DOUBLE dissatisfaction_risk_score
     }
 ```
 

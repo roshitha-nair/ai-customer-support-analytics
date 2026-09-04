@@ -16,6 +16,8 @@ def main():
         "Predicted Dissatisfaction Rate",
         "Sentiment Distribution",
         "Emerging Themes",
+        "Sentiment Distribution by Channel",
+        "Top 5 Tickets by Predicted Dissatisfaction Risk",
     ]
 
     sql_statements = [

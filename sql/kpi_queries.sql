@@ -152,3 +152,48 @@ GROUP BY
 ORDER BY
     week_start,
     ticket_count DESC;
+
+
+-- Sentiment distribution by channel
+SELECT
+    ch.ticket_channel,
+    ft.sentiment_label,
+    COUNT(*) AS ticket_count,
+    ROUND(
+        100.0 * COUNT(*)
+        / SUM(COUNT(*)) OVER (
+            PARTITION BY ch.ticket_channel
+        ),
+        2
+    ) AS channel_sentiment_pct
+FROM fact_ticket AS ft
+JOIN dim_channel AS ch
+    ON ft.channel_key = ch.channel_key
+GROUP BY
+    ch.ticket_channel,
+    ft.sentiment_label
+ORDER BY
+    ch.ticket_channel,
+    ticket_count DESC;
+
+
+-- Top 5 tickets by predicted dissatisfaction risk
+SELECT
+    ft.ticket_id,
+    cat.ticket_type,
+    ch.ticket_channel,
+    pr.ticket_priority,
+    ft.sentiment_label,
+    ft.topic_label,
+    ROUND(ft.dissatisfaction_risk_score, 6) AS dissatisfaction_risk_score
+FROM fact_ticket AS ft
+JOIN dim_category AS cat
+    ON ft.category_key = cat.category_key
+JOIN dim_channel AS ch
+    ON ft.channel_key = ch.channel_key
+JOIN dim_priority AS pr
+    ON ft.priority_key = pr.priority_key
+ORDER BY
+    ft.dissatisfaction_risk_score DESC,
+    ft.ticket_id
+LIMIT 5;
