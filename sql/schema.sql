@@ -64,7 +64,7 @@ CREATE TABLE fact_ticket (
     sentiment_score DOUBLE,
     topic_id INTEGER,
     topic_label VARCHAR,
-    escalation_risk_score DOUBLE,
+    dissatisfaction_risk_score DOUBLE,
 
     FOREIGN KEY (category_key)
         REFERENCES dim_category(category_key),

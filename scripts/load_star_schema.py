@@ -4,8 +4,30 @@ import duckdb
 
 
 PROJECT_ROOT = Path(__file__).resolve().parents[1]
+
 DATABASE_PATH = PROJECT_ROOT / "data" / "customer_support.duckdb"
 SCHEMA_PATH = PROJECT_ROOT / "sql" / "schema.sql"
+
+SENTIMENT_PATH = (
+    PROJECT_ROOT
+    / "data"
+    / "processed"
+    / "ticket_sentiment.csv"
+)
+
+TOPICS_PATH = (
+    PROJECT_ROOT
+    / "data"
+    / "processed"
+    / "customer_support_topics.csv"
+)
+
+RISK_PATH = (
+    PROJECT_ROOT
+    / "data"
+    / "processed"
+    / "ticket_dissatisfaction_risk.csv"
+)
 
 
 def main():
@@ -18,9 +40,37 @@ def main():
 
         conn.execute(
             """
+            CREATE OR REPLACE TEMP TABLE sentiment_output AS
+            SELECT *
+            FROM read_csv_auto(?)
+            """,
+            [str(SENTIMENT_PATH)],
+        )
+
+        conn.execute(
+            """
+            CREATE OR REPLACE TEMP TABLE topic_output AS
+            SELECT *
+            FROM read_csv_auto(?)
+            """,
+            [str(TOPICS_PATH)],
+        )
+
+        conn.execute(
+            """
+            CREATE OR REPLACE TEMP TABLE risk_output AS
+            SELECT *
+            FROM read_csv_auto(?)
+            """,
+            [str(RISK_PATH)],
+        )
+
+        conn.execute(
+            """
             INSERT INTO dim_category
             SELECT
-                ROW_NUMBER() OVER (ORDER BY "Ticket Type") AS category_key,
+                ROW_NUMBER() OVER (ORDER BY "Ticket Type")
+                    AS category_key,
                 "Ticket Type" AS ticket_type
             FROM (
                 SELECT DISTINCT "Ticket Type"
@@ -33,7 +83,8 @@ def main():
             """
             INSERT INTO dim_channel
             SELECT
-                ROW_NUMBER() OVER (ORDER BY "Ticket Channel") AS channel_key,
+                ROW_NUMBER() OVER (ORDER BY "Ticket Channel")
+                    AS channel_key,
                 "Ticket Channel" AS ticket_channel
             FROM (
                 SELECT DISTINCT "Ticket Channel"
@@ -46,7 +97,8 @@ def main():
             """
             INSERT INTO dim_priority
             SELECT
-                ROW_NUMBER() OVER (ORDER BY "Ticket Priority") AS priority_key,
+                ROW_NUMBER() OVER (ORDER BY "Ticket Priority")
+                    AS priority_key,
                 "Ticket Priority" AS ticket_priority
             FROM (
                 SELECT DISTINCT "Ticket Priority"
@@ -96,7 +148,12 @@ def main():
                 has_first_response,
                 is_resolved,
                 has_csat,
-                is_dissatisfied
+                is_dissatisfied,
+                sentiment_label,
+                sentiment_score,
+                topic_id,
+                topic_label,
+                dissatisfaction_risk_score
             )
             SELECT
                 src."Ticket ID" AS ticket_id,
@@ -108,7 +165,8 @@ def main():
                 src."Customer Gender" AS customer_gender,
                 src."Product Purchased" AS product_purchased,
                 src."Ticket Subject" AS ticket_subject,
-                src."Cleaned Ticket Description" AS cleaned_ticket_description,
+                src."Cleaned Ticket Description"
+                    AS cleaned_ticket_description,
                 src."Ticket Status" AS ticket_status,
                 src."Resolution" AS resolution,
                 src."First Response Time" AS first_response_time,
@@ -118,7 +176,12 @@ def main():
                 src."Has First Response" AS has_first_response,
                 src."Is Resolved" AS is_resolved,
                 src."Has CSAT" AS has_csat,
-                src.is_dissatisfied
+                src.is_dissatisfied,
+                sent.sentiment_label,
+                sent.sentiment_score,
+                topic.topic_id,
+                topic.topic_label,
+                risk.dissatisfaction_risk_score
             FROM processed_customer_support_tickets AS src
             JOIN dim_category AS cat
                 ON src."Ticket Type" = cat.ticket_type
@@ -128,6 +191,12 @@ def main():
                 ON src."Ticket Priority" = pri.ticket_priority
             JOIN dim_date AS dt
                 ON src."Date of Purchase" = dt.full_date
+            JOIN sentiment_output AS sent
+                ON src."Ticket ID" = sent.ticket_id
+            JOIN topic_output AS topic
+                ON src."Ticket ID" = topic."Ticket ID"
+            JOIN risk_output AS risk
+                ON src."Ticket ID" = risk.ticket_id
             """
         )
 
