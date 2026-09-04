@@ -1,0 +1,14 @@
+{
+    "model_name": "Gradient Boosting Classifier",
+    "classification_threshold": 0.3,
+    "target": "is_dissatisfied",
+    "positive_class": 1,
+    "negative_class": 0,
+    "model_features": [
+        "Ticket Priority",
+        "Ticket Channel",
+        "sentiment_label",
+        "topic_id",
+        "sentiment_score"
+    ]
+}
