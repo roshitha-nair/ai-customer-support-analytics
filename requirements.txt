@@ -10,3 +10,5 @@ transformers
 torch
 bertopic
 sentence-transformers
+fastapi
+uvicorn
